@@ -6,7 +6,7 @@ import PaymentModal from "./PaymentModal";
 import logo from "../assets/logo.jpg";
 
 export default function AppShell() {
-  const { role, plan, setPlan, logout, currentStudent } = useAuth();
+  const { role, setPlan, logout, currentStudent } = useAuth();
   const navigate = useNavigate();
   const [showPayment, setShowPayment] = useState(false);
   const roleLabel = {

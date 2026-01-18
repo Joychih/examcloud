@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { addQuestion, getExams, getSchools, upsertExam, updateQuestion } from "../data/api";
-import type { Exam, ExamCategory, Question, QuestionType, School } from "../data/models";
+import type { Exam, ExamCategory, QuestionType, School } from "../data/models";
 import Latex from "../components/Latex";
 
 // 預設選項
@@ -249,8 +249,6 @@ export default function CreatorQuestionEditor() {
       setStatus("⚠️ 請選擇學校或手動輸入學校名稱");
       return;
     }
-
-    const schoolObj = schools.find((s) => s.id === examForm.school);
 
     const exam = await upsertExam({
       id: examForm.id || undefined,

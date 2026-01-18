@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createCustomExam, getExams, getQuestionBank, getResults } from "../data/api";
-import type { Exam, ExamResult, Question } from "../data/models";
+import { createCustomExam, getQuestionBank, getResults } from "../data/api";
+import type { ExamResult, Question } from "../data/models";
 import Latex from "../components/Latex";
 import { useAuth } from "../hooks/useAuth";
 
@@ -54,7 +54,6 @@ const questionCountOptions = [5, 10, 15, 20, 25, 30];
 
 export default function StudentTopicSearch() {
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
-  const [exams, setExams] = useState<Exam[]>([]);
   const [results, setResults] = useState<ExamResult[]>([]);
   const [level, setLevel] = useState<"junior" | "senior">("senior");
   const [gradeFilter, setGradeFilter] = useState<string>("高一");
@@ -73,10 +72,9 @@ export default function StudentTopicSearch() {
   const { currentStudent } = useAuth();
 
   useEffect(() => {
-    Promise.all([getQuestionBank(), getResults(), getExams()]).then(([questions, resultData, examData]) => {
+    Promise.all([getQuestionBank(), getResults()]).then(([questions, resultData]) => {
       setAllQuestions(questions);
       setResults(resultData);
-      setExams(examData);
       setLoading(false);
     });
   }, []);

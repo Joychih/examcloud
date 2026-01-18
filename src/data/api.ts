@@ -1,5 +1,5 @@
 import type { Exam, ExamCategory, ExamResult, Question, School, StudentUser, Announcement, CustomExam, ExamAssignment } from "./models";
-import { mockDb, nextId } from "./mock";
+import { mockDb, nextId, syncMockDbToStorage } from "./mock";
 
 const useMock = import.meta.env.VITE_USE_MOCK === "true";
 
@@ -56,6 +56,7 @@ export const postResult = async (result: ExamResult): Promise<void> => {
       userId: result.userId ?? "student-001",
     };
     mockDb.results.unshift(newResult);
+    syncMockDbToStorage();
     return;
   }
   await apiFetch<void>("/api/results", {
@@ -87,6 +88,7 @@ export const upsertExam = async (
     };
     // 新建立的試卷加到最前面，讓學生能看到最新的
     mockDb.exams.unshift(newExam);
+    syncMockDbToStorage();
     return newExam;
   }
   return apiFetch<Exam>("/api/exams/upsert", {
@@ -123,6 +125,7 @@ export const updateQuestion = async (
       const question = exam.questions.find((q) => q.id === questionId);
       if (question) {
         Object.assign(question, updates);
+        syncMockDbToStorage();
         return question;
       }
     }
@@ -140,6 +143,7 @@ export const deleteQuestion = async (questionId: string): Promise<void> => {
       const index = exam.questions.findIndex((q) => q.id === questionId);
       if (index !== -1) {
         exam.questions.splice(index, 1);
+        syncMockDbToStorage();
         return;
       }
     }
@@ -246,6 +250,7 @@ export const createCustomExam = async (
     // 儲存自訂試卷的題目到暫存
     mockDb.customExams = mockDb.customExams || [];
     mockDb.customExams.push({ ...customExam, questions });
+    syncMockDbToStorage();
   }
   
   return customExam;
@@ -289,6 +294,7 @@ export const createAnnouncement = async (announcement: Omit<Announcement, "id" |
       createdAt: new Date().toISOString(),
     };
     mockDb.announcements.unshift(newAnn);
+    syncMockDbToStorage();
     return newAnn;
   }
   return apiFetch<Announcement>("/api/announcements", {
@@ -302,6 +308,7 @@ export const deleteAnnouncement = async (id: string): Promise<void> => {
     const index = mockDb.announcements.findIndex((a) => a.id === id);
     if (index !== -1) {
       mockDb.announcements.splice(index, 1);
+      syncMockDbToStorage();
     }
     return;
   }
@@ -354,6 +361,7 @@ export const createAssignment = async (data: {
       }
     });
     
+    syncMockDbToStorage();
     return newAssignment;
   }
   return apiFetch<ExamAssignment>("/api/assignments", {
@@ -382,6 +390,7 @@ export const deleteAssignment = async (id: string): Promise<void> => {
         }
       });
       mockDb.assignments.splice(index, 1);
+      syncMockDbToStorage();
     }
     return;
   }

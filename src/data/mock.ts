@@ -1,4 +1,5 @@
-import type { Exam, ExamResult, Question, School, ExamCategory, StudentUser, Announcement, ExamAssignment } from "./models";
+import type { Exam, ExamResult, Question, School, StudentUser, Announcement, ExamAssignment } from "./models";
+import { loadFromStorage, saveToStorage } from "./storage";
 
 // ============================================================================
 // 學校資料 - 9區共45+所學校
@@ -593,7 +594,6 @@ const astMathJiaQuestions: Question[] = [
 // ============================================================================
 
 let examIdCounter = 1;
-let resultIdCounter = 1;
 
 function getQuestionsByGradeSubject(grade: string, subject: string): Question[] {
   if (grade === "高一") return grade1Questions;
@@ -980,6 +980,10 @@ export const mockResults: ExamResult[] = [
 // ============================================================================
 export const mockAssignments: ExamAssignment[] = [];
 
+// 從 localStorage 載入已儲存的資料
+const storedData = loadFromStorage();
+
+// 合併初始資料與儲存的資料
 export const mockDb: {
   schools: School[];
   exams: Exam[];
@@ -990,12 +994,24 @@ export const mockDb: {
   assignments: ExamAssignment[];
 } = {
   schools: mockSchools,
-  exams: mockExams,
-  results: mockResults,
-  students: mockStudents,
-  announcements: mockAnnouncements,
-  customExams: [],
-  assignments: mockAssignments,
+  exams: storedData.exams || mockExams,
+  results: storedData.results || mockResults,
+  students: storedData.students || mockStudents,
+  announcements: storedData.announcements || mockAnnouncements,
+  customExams: storedData.customExams || [],
+  assignments: storedData.assignments || mockAssignments,
+};
+
+// 同步到 localStorage 的函數（供外部調用）
+export const syncMockDbToStorage = () => {
+  saveToStorage({
+    exams: mockDb.exams,
+    results: mockDb.results,
+    students: mockDb.students,
+    announcements: mockDb.announcements,
+    customExams: mockDb.customExams,
+    assignments: mockDb.assignments,
+  });
 };
 
 export const nextId = (prefix: string) => {

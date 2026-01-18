@@ -199,7 +199,6 @@ export default function AdminAnalytics() {
                     new Date(a.submittedAt).getTime()
                 )
                 .map((result, index) => {
-                  const exam = examMap.get(result.examId);
                   const student = studentMap.get(result.userId || "");
                   const pctScore =
                     result.total === 0
