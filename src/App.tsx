@@ -79,7 +79,7 @@ export default function App() {
         <Route
           path="/student/results/:resultId"
           element={
-            <RequireRole role="student">
+            <RequireRole role={["student", "admin"]}>
               <StudentResultPage />
             </RequireRole>
           }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { createAssignment, createCustomExam, filterQuestions, getAssignments, getExams, getQuestionBank, getResults, getStudents } from "../data/api";
 import type { Exam, ExamAssignment, ExamResult, Question, StudentUser } from "../data/models";
 import { mockDb } from "../data/mock";
@@ -15,6 +16,7 @@ type AssignMode = "exam" | "topic" | "questions";
 type ViewTab = "students" | "assignments";
 
 export default function AdminUsers() {
+  const navigate = useNavigate();
   const [students, setStudents] = useState<StudentUser[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
@@ -418,21 +420,54 @@ export default function AdminUsers() {
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {assignment.targetStudentIds.map((sid) => {
                         const student = students.find((s) => s.id === sid);
-                        const hasCompleted = results.some(
+                        const studentResult = results.find(
                           (r) => r.userId === sid && (r.examId === assignment.examId || r.assignmentId === assignment.id)
                         );
+                        const hasCompleted = !!studentResult;
+                        
                         return (
                           <span
                             key={sid}
+                            onClick={() => {
+                              if (hasCompleted && studentResult?.id) {
+                                navigate(`/student/result/${studentResult.id}`);
+                              }
+                            }}
                             style={{
-                              padding: "4px 10px",
+                              padding: "6px 12px",
                               borderRadius: 999,
                               fontSize: 12,
+                              fontWeight: hasCompleted ? 600 : 400,
                               background: hasCompleted ? "#dcfce7" : "#fee2e2",
                               color: hasCompleted ? "#166534" : "#dc2626",
+                              cursor: hasCompleted ? "pointer" : "default",
+                              transition: "all 0.2s",
+                              border: hasCompleted ? "1px solid #86efac" : "1px solid #fecaca",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4,
                             }}
+                            onMouseEnter={(e) => {
+                              if (hasCompleted) {
+                                e.currentTarget.style.background = "#bbf7d0";
+                                e.currentTarget.style.transform = "scale(1.05)";
+                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(34, 197, 94, 0.3)";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (hasCompleted) {
+                                e.currentTarget.style.background = "#dcfce7";
+                                e.currentTarget.style.transform = "scale(1)";
+                                e.currentTarget.style.boxShadow = "none";
+                              }
+                            }}
+                            title={hasCompleted ? `點擊查看 ${student?.name || sid} 的答題紀錄` : "尚未作答"}
                           >
-                            {hasCompleted ? "✓" : "○"} {student?.name || sid}
+                            <span>{hasCompleted ? "✓" : "○"}</span>
+                            <span>{student?.name || sid}</span>
+                            {hasCompleted && (
+                              <span style={{ fontSize: 10, opacity: 0.7 }}>👆</span>
+                            )}
                           </span>
                         );
                       })}

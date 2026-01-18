@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAnnouncements, getAssignments, getCustomExam, getExams, getResults } from "../data/api";
+import { getAnnouncements, getAssignments, getCustomExam, getExams, getResults, getStudents } from "../data/api";
 import type { Announcement, Exam, ExamAssignment, ExamResult } from "../data/models";
 import { useAuth } from "../hooks/useAuth";
 import "./StudentDashboard.css";
@@ -21,18 +21,67 @@ export default function StudentDashboard() {
   const [assignments, setAssignments] = useState<ExamAssignment[]>([]);
   const [assignedExams, setAssignedExams] = useState<AssignedExamInfo[]>([]);
   const navigate = useNavigate();
-  const { isVip, setPlan, currentStudent } = useAuth();
+  const { isVip, setPlan, currentStudent, setCurrentStudent } = useAuth();
 
+  // 初始載入
   useEffect(() => {
-    Promise.all([getResults(), getExams(), getAnnouncements(), getAssignments()]).then(
-      ([resultData, examData, annData, assignmentData]) => {
-        setResults(resultData);
-        setExams(examData);
-        setAllAnnouncements(annData);
-        setAssignments(assignmentData);
+    const loadAllData = async () => {
+      const [resultData, examData, annData, assignmentData, studentsData] = await Promise.all([
+        getResults(),
+        getExams(),
+        getAnnouncements(),
+        getAssignments(),
+        getStudents(),
+      ]);
+      
+      setResults(resultData);
+      setExams(examData);
+      setAllAnnouncements(annData);
+      setAssignments(assignmentData);
+      
+      // 更新 currentStudent 到最新資料（包含最新的 assignments）
+      if (currentStudent) {
+        const updatedStudent = studentsData.find((s) => s.id === currentStudent.id);
+        if (updatedStudent) {
+          console.log("[Dashboard] Updating student:", updatedStudent.id);
+          console.log("[Dashboard] Updated assignments:", updatedStudent.assignments);
+          console.log("[Dashboard] Updated assignedExams:", updatedStudent.assignedExams);
+          setCurrentStudent(updatedStudent);
+        }
       }
-    );
-  }, []);
+    };
+    
+    loadAllData();
+  }, []); // 只在 mount 時執行一次
+
+  // 當頁面重新可見時重新載入（解決指派後看不到的問題）
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === "visible") {
+        console.log("[Dashboard] Page visible, reloading data...");
+        const [assignmentData, studentsData] = await Promise.all([
+          getAssignments(),
+          getStudents(),
+        ]);
+        
+        setAssignments(assignmentData);
+        
+        // 更新 currentStudent
+        if (currentStudent) {
+          const updatedStudent = studentsData.find((s) => s.id === currentStudent.id);
+          if (updatedStudent) {
+            console.log("[Dashboard] Visibility change - updating student");
+            setCurrentStudent(updatedStudent);
+          }
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [currentStudent?.id, setCurrentStudent]);
 
   // 載入被指派的試卷（使用 assignments）
   useEffect(() => {
@@ -132,11 +181,19 @@ export default function StudentDashboard() {
         }
       }
       
+      console.log("[Dashboard] Loaded assigned exams:", assigned.length, assigned);
       setAssignedExams(assigned);
     };
 
-    if (exams.length > 0 || assignments.length > 0) {
+    // 確保所有必要資料都已載入
+    if (currentStudent && (exams.length > 0 || assignments.length > 0)) {
       loadAssigned();
+    } else {
+      console.log("[Dashboard] Waiting for data:", {
+        hasStudent: !!currentStudent,
+        examsCount: exams.length,
+        assignmentsCount: assignments.length,
+      });
     }
   }, [currentStudent, exams, assignments, results]);
 
